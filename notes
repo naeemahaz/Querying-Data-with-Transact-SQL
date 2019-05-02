@@ -1,0 +1,62 @@
+Familiarize yourself with the Customer table by writing a Transact-SQL query that retrieves all columns for all customers.
+
+SELECT * FROM SALESLT.CUSTOMER
+-----------------------------------------------------------------------------------
+
+Create a table that lists all customer contact names. The table should include the 
+Title, FirstName, MiddleName, LastName and Suffix of all customers.
+
+SELECT TITLE,FIRSTNAME,MIDDLENAME,LASTNAME,SUFFIX
+FROM SalesLT.Customer;
+--------------------------------------------------------------------------------------
+
+Complete the query to list the following elements for all customers:
+The salesperson
+A column named CustomerName that displays how the customer contact should be greeted (e.g. "Mr Smith").
+The customer's phone number (Phone)
+Don't forget to space out the contents of your CustomerName column with + ' ' + and use the alias provided.
+
+SELECT SalesPerson, Title + ' ' + LastName AS CustomerName, PHONE
+FROM SalesLT.Customer;
+-------------------------------------------------------------------------------------
+
+Provide a list of all customer companies in the format <Customer ID>: <Company Name> 
+(e.g. 78: Preferred Bikes). You'll need to use both CAST() and VARCHAR in your solution. Don't forget to use the alias provided.
+
+SELECT CAST(CustomerID AS VARCHAR) + ': ' + CompanyName AS CustomerCompany
+FROM SalesLT.Customer;
+---------------------------------------------------------------------------------------
+
+Complete the query on the right to create the 2-column table that's specified above.
+
+SELECT SalesOrderNumber + ' (' + STR(RevisionNumber, 1) + ')' AS OrderRevision,
+	   CONVERT(NVARCHAR(30), OrderDate, 102) AS OrderDate
+FROM SalesLT.SalesOrderHeader;
+----------------------------------------------------------------------------------------
+
+Retrieve customer contact names including middle names when they're known.
+
+SELECT FirstName + ' ' + ISNULL(MiddleName + ' ', '') + LastName
+AS CustomerName
+FROM SalesLT.Customer;
+---------------------------------------------------------------------------------------
+
+Write a query that returns a list of customer IDs in one column, and a second column 
+called PrimaryContact that contains the email address if known, and otherwise the phone number.
+
+SELECT CustomerID, COALESCE(EmailAddress, Phone) AS PrimaryContact
+FROM SalesLT.Customer;
+------------------------------------------------------------------------------------------
+
+Write a query to list sales order IDs and order dates with a column named ShippingStatus that contains the text 
+'Shipped' for orders with a known ship date, and 'Awaiting Shipment' for orders with no ship date.
+
+SELECT SalesOrderID, OrderDate,
+  CASE
+    WHEN Shipdate IS NULL THEN 'Awaiting Shipment'
+    ELSE 'Shipped'
+  END AS ShippingStatus
+FROM SalesLT.SalesOrderHeader;
+---------------------------------------------------------------------------------------------
+
+

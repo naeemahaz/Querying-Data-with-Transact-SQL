@@ -958,6 +958,136 @@ INSERT INTO #ProductNames select ProductName from Products;
 select * from #ProductNames;
 ----------------------------------------------------------------------------------------------------
 
+Use CHOOSE() and MONTH() to get the season in which each order was shipped from the Orders table. 
+You should select the order ID, shipped date, and then the season aliased as ShippedSeason. You can copy and paste the
+below into your query.
+
+select orderid, ShippedDate, choose(month(shippeddate), 'Winter', 'Winter', 'Spring', 'Spring', 'Spring', 
+'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter') as ShippedSeason from orders where 
+ShippedDate IS NOT null
+
+Choose ---  
+SQL Server CHOOSE() function overview
+The CHOOSE() function returns the item from a list of items at a specified index.
+
+The following shows the syntax of the CHOOSE() function:
+
+1
+CHOOSE ( index, elem_1, elem_2 [, elem_n ] )
+In this syntax:
+
+index is an expression integer that specifies the index of the element to be returned. Note that the indexes of the elements are 1-based.
+elem_1, elem_2,… elem_n is a list of comma-separated values of any type.
+If index is 1, the CHOOSE() function returns elem_1. If index is 2, the CHOOSE() function returns elem_2, and so on.
+
+If index is not an integer, it will be cast to an integer. In case the index is out of the boundary of the list, the CHOOSE() function will return NULL.
+
+SQL Server CHOOSE() function examples
+Let’s take some examples of the CHOOSE() function.
+
+A) Using SQL Server CHOOSE() function with literal values example
+This example returns the second item from the list of values:
+
+1
+2
+SELECT 
+    CHOOSE(2, 'First', 'Second', 'Third') Result;
+Here is the output:
+
+1
+2
+3
+4
+5
+Result
+------
+Second
+ 
+(1 row affected)
+B) Using SQL Server CHOOSE() function for table column example
+The following example uses the CHOOSE() function to return the order status based on the value in the order_status column of the sales.orders table:
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+SELECT
+    order_id, 
+    order_date, 
+    CHOOSE(order_status,
+        'Pending', 
+        'Processing', 
+        'Rejected', 
+        'Completed') AS order_status
+FROM 
+    sales.orders
+ORDER BY 
+    order_date DESC;
+The following picture shows the partial result:
+
+SQL Server CHOOSE Function example with table column
+
+C) Using SQL Server CHOOSE() function with the MONTH function
+The following example uses the MONTH() function to return the seasons in which the customers buy products. The result of the MONTH() function is used in the CHOOSE() function to return the corresponding season:
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+SELECT 
+    order_id,
+    order_date,
+    customer_id,
+    CHOOSE(
+        MONTH(order_date), 
+        'Winter', 
+        'Winter', 
+        'Spring', 
+        'Spring', 
+        'Spring', 
+        'Summer', 
+        'Summer', 
+        'Summer', 
+        'Autumn', 
+        'Autumn', 
+        'Autumn', 
+        'Winter') month
+FROM 
+    sales.orders
+ORDER BY 
+    customer_id;
+The following picture shows the partial result set:
+
+SQL Server CHOOSE Function example
+
+In this tutorial, you have learned how to use the SQL Server CHOOSE() function to return an element on its index in a list of values.
+
 
 
 

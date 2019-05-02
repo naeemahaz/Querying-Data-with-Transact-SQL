@@ -113,5 +113,169 @@ FROM SalesLT.Product
 WHERE ProductNumber LIKE 'BK-[^R]%-[0-9][0-9]';
 ------------------------------------------------------------------------------------------------
 
+Write a query that returns the company name from the Sale.Customer table, 
+the sales order ID and total due from the SalesLT.SalesOrderHeader table. Make sure to use the 
+aliases provided, and default column names elsewhere.
+
+SELECT c.CompanyName, oh.SalesOrderId, oh.TotalDue
+FROM SalesLT.Customer AS c
+JOIN SalesLT.SalesOrderHeader AS oh
+ON c.CustomerID = oh.CustomerID;
+-------------------------------------------------------------------------------------------------
+
+Extend your customer orders query to include the main office address for each customer, 
+including the full street address, city, state or province, postal code, and country or region. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT c.CompanyName, a.AddressLine1, ISNULL(a.AddressLine2, '') AS AddressLine2, a.City, a.StateProvince, a.PostalCode, a.CountryRegion, oh.SalesOrderID, oh.TotalDue
+FROM SalesLT.Customer AS c
+JOIN SalesLT.SalesOrderHeader AS oh
+ON oh.CustomerID = c.CustomerID
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID AND AddressType = 'Main Office'
+JOIN SalesLT.Address AS a
+ON ca.AddressID = a.AddressID;
+------------------------------------------------------------------------------------------------
+
+Customers who have not placed any orders should be included at the bottom of 
+the list with NULL values for the order ID and total due. Make sure to use the aliases provided, 
+and default column names elsewhere.
+
+SELECT c.CompanyName, c.FirstName, c.LastName, oh.SalesOrderID, oh.TotalDue
+FROM SalesLT.Customer AS c
+LEFT JOIN SalesLT.SalesOrderHeader AS oh
+ON c.CustomerID = oh.CustomerID
+ORDER By oh.SalesOrderID desc;
+------------------------------------------------------------------------------------------------
+
+Write a query that returns a list of customer IDs, company names, contact names 
+(first name and last name), and phone numbers for customers with no address stored in the database. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT c.CompanyName, c.FirstName, c.LastName, c.Phone
+FROM SalesLT.Customer AS c
+LEFT JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+WHERE ca.AddressType IS NULL;
+------------------------------------------------------------------------------------------------
+
+Write a query that returns a column of customer IDs for customers who have never placed an order, 
+and a column of product IDs for products that have never been ordered.
+Each row with a customer ID should have a NULL product ID (because the customer 
+has never ordered a product) and each row with a product ID should have a NULL customer ID 
+(because the product has never been ordered by a customer).
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT c.CustomerID, p.ProductID
+FROM SalesLT.Customer AS c
+FULL JOIN SalesLT.SalesOrderHeader AS oh
+ON c.CustomerID = oh.CustomerID
+FULL JOIN SalesLT.SalesOrderDetail AS od
+ON od.SalesOrderID = oh.SalesOrderID
+FULL JOIN SalesLT.Product AS p
+ON p.ProductID = od.ProductID
+WHERE oh.SalesOrderNumber IS NULL
+ORDER BY p.ProductID, c.CustomerID;
+--------------------------------------------------------------------------------------------
+
+Write a query that retrieves the company name, first line of the street address, city, 
+and a column named AddressType with the value 'Billing' for customers where the address 
+type in the SalesLT.CustomerAddress table is 'Main Office'. Make sure to use the aliases provided, 
+and default column names elsewhere.
+
+SELECT C.CompanyName, A.AddressLine1, A.CITY, 'Billing' AS AddressType
+FROM SalesLT.Customer AS c
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON a.AddressID = ca.AddressID
+WHERE ca.AddressType = 'Main Office';
+-----------------------------------------------------------------------------------------
+
+Adapt the query to retrieve the company name, first line of the street address, city, 
+and a column named AddressType with the value 'Shipping' for customers where the address type 
+in the SalesLT.CustomerAddress table is 'Shipping'. Make sure to use the aliases provided, 
+and default column names elsewhere.
+
+SELECT c.CompanyName, a.AddressLine1, a.City, 'Shipping' AS AddressType
+FROM SalesLT.Customer AS c
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON ca.AddressID = a.AddressID
+WHERE ca.AddressType = 'Shipping';
+
+-----------------------------------------------------------------------------------------------
+
+Use UNION ALL to combine the results returned by the two queries to create a 
+list of all customer addresses that is sorted by company name and then address type.
+
+SELECT c.CompanyName, a.AddressLine1, a.City, 'Billing' AS AddressType
+FROM SalesLT.Customer AS c
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON ca.AddressID = a.AddressID
+WHERE ca.AddressType = 'Main Office'
+Union all
+SELECT c.CompanyName, a.AddressLine1, a.City, 'Shipping' AS AddressType
+FROM SalesLT.Customer AS c
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON ca.AddressID = a.AddressID
+WHERE ca.AddressType = 'Shipping'
+ORDER BY c.CompanyName, AddressType;
+---------------------------------------------------------------------------------------------
+Write a query that returns the company name of each company that appears in a table of 
+customers with a 'Main Office' address, but not in a table of customers 
+with a 'Shipping' address.
+
+SELECT c.CompanyName
+FROM SalesLT.Customer AS c
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON ca.AddressID = a.AddressID
+WHERE ca.AddressType = 'Main Office'
+EXCEPT
+SELECT c.CompanyName
+FROM SalesLT.Customer AS c
+JOIN SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON ca.AddressID = a.AddressID
+WHERE ca.AddressType = 'Shipping'
+ORDER BY c.CompanyName;
+--------------------------------------------------------------------------------------------------
+
+Write a query that returns the company name of each company that appears in a table of 
+customers with a 'Main Office' address, and also in a table of customers with a 'Shipping' 
+address. Make sure to use the aliases provided, and default column names elsewhere.
+
+Select c.CompanyName
+From SalesLT.Customer AS c
+Join SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON a.AddressID = ca.AddressID
+Where ca.AddressType = 'Main Office'
+INTERSECT
+Select c.CompanyName
+FROM SalesLT.Customer AS c
+Join SalesLT.CustomerAddress AS ca
+ON c.CustomerID = ca.CustomerID
+JOIN SalesLT.Address AS a
+ON a.AddressID = ca.AddressID
+Where ca.AddressType = 'Shipping'
+ORDER BY c.CompanyName;
+-------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 

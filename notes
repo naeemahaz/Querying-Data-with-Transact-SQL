@@ -1,3 +1,4 @@
+
 Familiarize yourself with the Customer table by writing a Transact-SQL query that retrieves all columns for all customers.
 
 SELECT * FROM SALESLT.CUSTOMER

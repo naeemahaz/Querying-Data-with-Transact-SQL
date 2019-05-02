@@ -271,9 +271,223 @@ Where ca.AddressType = 'Shipping'
 ORDER BY c.CompanyName;
 -------------------------------------------------------------------------------------------------
 
+Write a query to return the product ID of each product, together with the 
+product name formatted as upper case and a column named ApproxWeight with the weight of 
+each product rounded to the nearest whole unit. Make sure to use the aliases provided, 
+and default column names elsewhere.
+
+SELECT ProductID, UPPER(Name) AS ProductName, Round(Weight, 0) AS ApproxWeight
+FROM SalesLT.Product;
+--------------------------------------------------------------------------------------------------
+
+Extend your query to include columns named SellStartYear and SellStartMonth 
+containing the year and month in which AdventureWorks started selling each product. 
+The month should be displayed as the month name (e.g. 'January'). Make sure to use the aliases 
+provided, and default column names elsewhere.
+
+SELECT ProductID, UPPER(Name) AS ProductName, ROUND(Weight, 0) AS ApproxWeight,
+       Year(SellStartDate) as SellStartYear,
+       Datename(m, SellStartDate) as SellStartMonth
+FROM SalesLT.Product;
+--------------------------------------------------------------------------------------------------
+
+Extend your query to include a column named ProductType that contains the leftmost two characters from 
+the product number. Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT ProductID, UPPER(Name) AS ProductName, ROUND(Weight, 0) AS ApproxWeight,
+       YEAR(SellStartDate) as SellStartYear,
+       DATENAME(m, SellStartDate) as SellStartMonth,
+              Left(ProductNumber, 2) AS ProductType
+FROM SalesLT.Product;
+-------------------------------------------------------------------------------------------------------
+
+Extend your query to filter the product returned so that only products with a 
+numeric size are included. Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT ProductID, UPPER(Name) AS ProductName, ROUND(Weight, 0) AS ApproxWeight,
+       YEAR(SellStartDate) as SellStartYear,
+       DATENAME(m, SellStartDate) as SellStartMonth,
+       LEFT(ProductNumber, 2) AS ProductType
+FROM SalesLT.Product
+WHERE ISnumeric(Size) = 1;
+-------------------------------------------------------------------------------------------------------
+
+Write a query that returns a list of company names with a ranking of their 
+place in a list of highest TotalDue values from the SalesOrderHeader table. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT CompanyName, TotalDue AS Revenue,
+       Rank() OVER (ORDER BY SOH.TotalDue DESC) AS RankByRevenue
+FROM SalesLT.SalesOrderHeader AS SOH
+Join SalesLT.Customer AS C
+ON SOH.CustomerID = C.CustomerID;
+-------------------------------------------------------------------------------------------------------
+
+Write a query to retrieve a list of the product names and the total revenue 
+calculated as the sum of the LineTotal from the SalesLT.SalesOrderDetail table, 
+with the results sorted in descending order of total revenue. Make sure to use the aliases 
+provided, and default column names elsewhere.
+
+SELECT p.Name, SUM(sod.LineTotal) AS TotalRevenue
+FROM SalesLT.SalesOrderDetail AS sod
+JOIN SalesLT.Product as p
+ON sod.ProductID = p.ProductID
+GROUP BY p.Name
+ORDER BY TotalRevenue DESC;
+--------------------------------------------------------------------------------------------------------
+
+Modify the previous query to include sales totals for products that 
+have a list price of more than 1000. Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT Name, SUM(LineTotal) AS TotalRevenue
+FROM SalesLT.SalesOrderDetail AS SOD
+JOIN SalesLT.Product AS P
+ON SOD.ProductID = P.ProductID
+WHERE p.listprice > 1000
+GROUP BY P.Name
+ORDER BY TotalRevenue DESC;
+--------------------------------------------------------------------------------------------------------
+
+Modify the previous query to only include products with total sales greater than 20000. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT Name, SUM(LineTotal) AS TotalRevenue
+FROM SalesLT.SalesOrderDetail AS SOD
+JOIN SalesLT.Product AS P
+ON SOD.ProductID = P.ProductID
+WHERE P.ListPrice > 1000
+GROUP BY P.Name
+Having SUM(LineTotal) > 20000
+ORDER BY TotalRevenue DESC;
+--------------------------------------------------------------------------------------------------------
+
+Retrieve the product ID, name, and list price for each product where the list 
+price is higher than the average unit price for all products that have been sold.
+
+SELECT ProductID, Name, ListPrice
+FROM SalesLT.Product
+WHERE ListPrice > 
+(SELECT AVG(UnitPrice) FROM SalesLT.SalesOrderDetail)
+ORDER BY ProductID;
+
+-------------------------------------------------------------------------------------------------------
+
+Retrieve the product ID, name, and list price for each product where the list price is 100 or more, 
+and the product has been sold for (strictly) less than 100.
+Remember, the ProductID in your subquery will be from the SalesLT.SalesOrderDetail table.
+
+SELECT ProductID, Name, ListPrice
+FROM SalesLT.Product
+WHERE ProductID IN
+   (SELECT ProductID FROM SalesLT.SalesOrderDetail
+   WHERE UnitPrice < 100)
+AND ListPrice >= 100
+ORDER BY ProductID;
+------------------------------------------------------------------------------------------------------
+
+Retrieve the product ID, name, cost, and list price for each product along with the average 
+unit price for which that product has been sold. Make sure to use the aliases provided, and 
+default column names elsewhere.
+
+SELECT ProductID, Name, StandardCost, ListPrice,
+(SELECT AVG(UnitPrice)
+ FROM SalesLT.SalesOrderDetail AS SOD
+ WHERE P.ProductID = SOD.ProductID) AS AvgSellingPrice
+FROM SalesLT.Product AS P
+ORDER BY P.ProductID;
+-----------------------------------------------------------------------------------------------------
+
+Filter the query for the previous exercise to include only products where the cost is 
+higher than the average selling price. Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT ProductID, Name, StandardCost, ListPrice,
+(SELECT AVG(UnitPrice)
+ FROM SalesLT.SalesOrderDetail AS SOD
+ WHERE P.ProductID = SOD.ProductID) AS AvgSellingPrice
+FROM SalesLT.Product AS P
+WHERE StandardCost >
+(SELECT AVG(UnitPrice)
+ FROM SalesLT.SalesOrderDetail AS SOD
+ WHERE P.ProductID = SOD.ProductID)
+ORDER BY P.ProductID;
+---------------------------------------------------------------------------------------------------------
+
+Retrieve the sales order ID, customer ID, first name, last name, and total due for all sales 
+orders from the SalesLT.SalesOrderHeader table and the dbo.ufnGetCustomerInformation function. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT SOH.SalesOrderID, SOH.CustomerID, CI.FirstName, CI.LastName, SOH.TotalDue
+FROM SalesLT.SalesOrderHeader AS SOH
+CROSS APPLY dbo.ufnGetCustomerInformation(SOH.CustomerID) AS CI
+ORDER BY SOH.SalesOrderID;
+--------------------------------------------------------------------------------------------------------
+
+Retrieve the customer ID, first name, last name, address line 1 and city for all customers from the SalesLT.Address 
+and SalesLT.CustomerAddress tables, using the dbo.ufnGetCustomerInformation function. Make sure to use the 
+aliases provided, and default column names elsewhere.
+
+SELECT CA.CustomerID, CI.FirstName, CI.LastName, A.Addressline1, A.City
+FROM SalesLT.Address AS A
+JOIN SalesLT.CustomerAddress AS CA
+ON A.AddressID = CA.AddressID
+CROSS APPLY dbo.ufnGetCustomerInformation(CA.CustomerID) AS CI
+ORDER BY CA.CustomerID;
+-----------------------------------------------------------------------------------------------------------
+
+Retrieve the product ID, product name, product model name, and product model summary for each 
+product from the SalesLT.Product table and the SalesLT.vProductModelCatalogDescription view. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT P.PRODUCTID, P.NAME AS ProductName, PM.Name AS ProductModel, PM.Summary
+FROM SalesLT.Product AS P
+JOIN SalesLT.vProductModelCatalogDescription AS PM
+ON P.ProductModelID = PM.ProductModelID
+ORDER BY ProductID;
+-----------------------------------------------------------------------------------------------------------
+
+Create a table variable and populate it with a list of distinct colors from the SalesLT.Product table. 
+Then use the table variable to filter a query that returns the product ID, name, and color from the 
+SalesLT.Product table so that only products with a color listed in the table variable are returned. 
+You'll need to use NVARCHAR(15) in your solution and make sure to use the aliases provided.
+
+DECLARE @Colors AS Table (Color NVARCHAR(15));
+
+INSERT INTO @COLORS
+SELECT DISTINCT COLOR FROM SalesLT.PRODUCT;
+
+SELECT ProductID, Name, Color
+FROM SalesLT.Product
+WHERE COLOR IN (SELECT COLOR FROM @COLORS);
+--------------------------------------------------------------------------------------------------------
+
+Write a query that uses this function to return a list of all products including 
+their parent category and their own category. Make sure to use the aliases provided, 
+and default column names elsewhere.
+
+SELECT C.ParentProductCategoryName AS ParentCategory,
+       C.ProductCategoryName AS Category,
+       P.ProductID, P.NAME AS ProductName
+FROM SalesLT.Product AS P
+JOIN dbo.ufnGetAllCategories() AS C
+ON P.ProductCategoryID = C.ProductCategoryID
+ORDER BY ParentCategory, Category, ProductName;
+-------------------------------------------------------------------------------------------------------
+
+Retrieve a list of customers in the format Company (Contact Name) together with the total revenue for each customer. 
+Use a derived table or a common table expression to retrieve the details for each sales order, 
+and then query the derived table or CTE to aggregate and group the data. Make sure to use the aliases provided, 
+and default column names elsewhere.
 
 
-
+SELECT COMPANYCONTACT, SUM(SALESAMOUNT) AS Revenue
+FROM
+	(SELECT CONCAT(c.CompanyName, CONCAT(' (' + c.FirstName + ' ', c.LastName + ')')), SOH.TotalDue
+	 FROM SalesLT.SalesOrderHeader AS SOH
+	 JOIN SalesLT.Customer AS c
+	 ON SOH.CustomerID = c.CustomerID) AS CustomerSales(CompanyContact, SalesAmount)
+GROUP BY CompanyContact
+ORDER BY CompanyContact;
+------------------------------------------------------------------------------------------------------
 
 
 

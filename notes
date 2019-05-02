@@ -1063,3 +1063,14 @@ In this tutorial, you have learned how to use the SQL Server CHOOSE() function t
 its index in a list of values.
 ------------------------------------------------------------------------------------------------
 
+DECLARE @region NVARCHAR(25) = 'Space'
+
+IF NOT EXISTS (SELECT * FROM Region where RegionDescription = @region)
+BEGIN
+  THROW 50001, 'Error!', 0;
+END
+Else 
+Begin 
+select * from Region where RegionDescription = @region
+end 
+ 

@@ -59,4 +59,59 @@ SELECT SalesOrderID, OrderDate,
 FROM SalesLT.SalesOrderHeader;
 ---------------------------------------------------------------------------------------------
 
+Finish the Transact-SQL query that retrieves all values for City and StateProvince, without duplicates, from the Address table.
+
+SELECT Distinct City, StateProvince
+FROM SalesLT.Address;
+------------------------------------------------------------------------------------------------
+
+Finish the query to retrieve the names of the top ten percent of products by weight.
+
+SELECT top 10 percent weight, Name
+FROM SalesLT.Product
+order by Weight desc;
+--------------------------------------------------------------------------------------------
+
+Tweak the query to list the heaviest 100 products not including the ten most heavy ones.
+
+SELECT weight, productID, Name
+FROM SalesLT.Product
+ORDER BY Weight DESC
+OFFSET 10 rows fetch NEXT 100 rows ONLY;
+-----------------------------------------------------------------------------------------------
+
+Write a query to find the names, colors, and sizes of the products with a product model ID of 1.
+
+SELECT Name, Color, Size
+FROM SalesLT.Product
+WHERE ProductModelID = 1;
+----------------------------------------------------------------------------------------------
+
+Retrieve the product number and name of the products that have a Color of 'Black', 'Red', or 'White' and a Size of 'S' or 'M'.
+
+SELECT ProductNumber, Name
+FROM SalesLT.Product
+WHERE Color IN ('Black', 'Red', 'White') AND Size IN ('S', 'M');
+----------------------------------------------------------------------------------------------
+
+Retrieve the product number, name, and list price of products that have a product number beginning with 'BK-'.
+
+SELECT ProductNumber, Name, ListPrice
+FROM SalesLT.Product
+WHERE ProductNumber like 'BK-%';
+-----------------------------------------------------------------------------------------------
+
+Modify your previous query to retrieve the product number, name, and list price of products with product 
+number beginning with 'BK-' followed by any character other than 'R', and ending with a '-' followed by any two numerals.
+Remember:
+to match any string of zero or more characters, use %
+to match characters that are not R, use [^R]
+to match a numeral, use [0-9]
+
+SELECT ProductNumber, Name, ListPrice
+FROM SalesLT.Product
+WHERE ProductNumber LIKE 'BK-[^R]%-[0-9][0-9]';
+------------------------------------------------------------------------------------------------
+
+
 

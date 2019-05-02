@@ -489,6 +489,509 @@ GROUP BY CompanyContact
 ORDER BY CompanyContact;
 ------------------------------------------------------------------------------------------------------
 
+Modify the query so that the results include a grand total for all sales revenue and a subtotal for 
+each country/region in addition to the state/province subtotals that are already returned. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT a.CountryRegion, a.StateProvince, SUM(soh.TotalDue) AS Revenue
+FROM SalesLT.Address AS a
+JOIN SalesLT.CustomerAddress AS ca
+ON a.AddressID = ca.AddressID
+JOIN SalesLT.Customer AS c
+ON ca.CustomerID = c.CustomerID
+JOIN SalesLT.SalesOrderHeader as soh
+ON c.CustomerID = soh.CustomerID
+GROUP BY ROLLUP(a.CountryRegion, a.StateProvince)
+ORDER BY a.CountryRegion, a.StateProvince;
+
+-----------------------------------------------------------------------------------------------------
+Modify your query to include a column named Level that indicates at which level in the total, country/region, and state/province hierarchy the revenue figure in the row is aggregated.
+For example, the grand total row should contain the value 'Total', the row showing the subtotal for United States should contain the value 'United States Subtotal', and the row showing the subtotal for California should contain the value 'California Subtotal'.
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT a.CountryRegion, a.StateProvince,
+IIF(GROUPING_ID(a.CountryRegion) = 1 AND GROUPING_ID(a.StateProvince) = 1, 'Total', IIF(GROUPING_ID(a.StateProvince) = 1, a.CountryRegion + ' Subtotal', a.StateProvince + ' Subtotal')) AS Level,
+SUM(soh.TotalDue) AS Revenue
+FROM SalesLT.Address AS a
+JOIN SalesLT.CustomerAddress AS ca
+ON a.AddressID = ca.AddressID
+JOIN SalesLT.Customer AS c
+ON ca.CustomerID = c.CustomerID
+JOIN SalesLT.SalesOrderHeader as soh
+ON c.CustomerID = soh.CustomerID
+GROUP BY ROLLUP(a.CountryRegion, a.StateProvince)
+ORDER BY a.CountryRegion, a.StateProvince;
+---------------------------------------------------------------------------------------------------
+
+Extend your query to include a grouping for individual cities. 
+Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT a.CountryRegion, a.StateProvince, a.City,
+CHOOSE (1 + GROUPING_ID(a.City) + GROUPING_ID(a.StateProvince) + GROUPING_ID(a.CountryRegion),
+        a.City + ' Subtotal', a.StateProvince + ' Subtotal',
+        a.CountryRegion + ' Subtotal', 'Total') AS Level,
+SUM(soh.TotalDue) AS Revenue
+FROM SalesLT.Address AS a
+JOIN SalesLT.CustomerAddress AS ca
+ON a.AddressID = ca.AddressID
+JOIN SalesLT.Customer AS c
+ON ca.CustomerID = c.CustomerID
+JOIN SalesLT.SalesOrderHeader as soh
+ON c.CustomerID = soh.CustomerID
+GROUP BY ROLLUP(a.CountryRegion, a.StateProvince, a.City)
+ORDER BY a.CountryRegion, a.StateProvince, a.City;
+----------------------------------------------------------------------------------------------------
+
+Retrieve a list of customer company names together with their total revenue for each parent category in 
+Accessories, Bikes, Clothing, and Components. Make sure to use the aliases provided, and default column names elsewhere.
+
+SELECT * FROM
+(SELECT cat.ParentProductCategoryName, cust.CompanyName, sod.LineTotal
+ FROM SalesLT.SalesOrderDetail AS sod
+ JOIN SalesLT.SalesOrderHeader AS soh ON sod.SalesOrderID = soh.SalesOrderID
+ JOIN SalesLT.Customer AS cust ON soh.CustomerID = cust.CustomerID
+ JOIN SalesLT.Product AS prod ON sod.ProductID = prod.ProductID
+ JOIN SalesLT.vGetAllCategories AS cat ON prod.ProductcategoryID = cat.ProductCategoryID) AS catsales
+PIVOT (SUM(LineTotal) FOR ParentProductCategoryName
+IN ([Accessories], [Bikes], [Clothing], [Components])) AS pivotedsales
+ORDER BY CompanyName;
+-------------------------------------------------------------------------------------------------
+
+AdventureWorks has started selling the new product shown in the table above. Insert it into the SalesLT.Product table, using default or NULL values for unspecified columns.
+Once you've inserted the product, run SELECT SCOPE_IDENTITY(); to get the last identity value that was inserted.
+Add a query to view the row for the product in the SalesLT.Product table.
+
+INSERT INTO SalesLT.Product (Name, ProductNumber, StandardCost, ListPrice, ProductCategoryID, SellStartDate)
+VALUES
+('LED Lights', 'LT-L123', 2.56, 12.99, 37, GETDATE());
+SELECT SCOPE_IDENTITY();
+select * FROM SalesLT.Product
+WHERE ProductID = SCOPE_IDENTITY();
+-----------------------------------------------------------------------------------------------------
+
+The sales manager at AdventureWorks has mandated a 10% price increase for all products in the Bells and Horns category. 
+Update the rows in the SalesLT.Product table for these products to increase their price by 10%.
+If you want, you can use a SELECT statement afterwards to see if the records were properly updated, but we won't check that.
+
+UPDATE SalesLT.Product
+SET ListPrice = ListPrice * 1.1
+WHERE ProductCategoryID =
+  (Select ProductCategoryID FROM SalesLT.ProductCategory where Name = 'Bells and Horns');
+  --------------------------------------------------------------------------------------------------
+ 
+ Delete the records for the Bells and Horns category and its products. You must ensure that you delete the records 
+ from the tables in the correct order to avoid a foreign-key constraint violation.
+If you want, you can use a SELECT statement afterwards to see if the rows were properly deleted, but we won't check that.
+  
+Delete from SalesLT.Product
+WHERE ProductCategoryID =
+	(SELECT ProductCategoryID FROM SalesLT.ProductCategory where Name = 'Bells and Horns');
+
+delete from SalesLT.ProductCategory
+WHERE ProductCategoryID =
+	(SELECT ProductCategoryID FROM SalesLT.ProductCategory where Name = 'Bells and Horns');
+------------------------------------------------------------------------------------------------------------
+
+Fill in the variable names to complete the DECLARE statements. You can infer these names from the 
+INSERT statement further down the script.Finish the INSERT query. Because SalesOrderID is an IDENTITY column, this 
+ID will automatically be generated for you. You can use the hardcoded value 'CARGO TRANSPORT 5' for the ShipMethod field.
+Use SCOPE_IDENTITY() to print out the ID of the new sales order header.
+
+DECLARE @OrderDate datetime = GETDATE();
+DECLARE @DueDate datetime = DATEADD(dd, 7, GETDATE());
+DECLARE @CustomerID int = 1;
+
+INSERT INTO SalesLT.SalesOrderHeader (OrderDate, DueDate, CustomerID, ShipMethod)
+VALUES (@OrderDate, @DueDate, @CustomerID, 'CARGO TRANSPORT 5');
+
+PRINT SCOPE_IDENTITY();
+--------------------------------------------------------------------------------------------------------------
+
+Slightly adapted code from the previous exercise is available; it defines the OrderID with SCOPE_IDENTITY().
+Complete the IF-ELSE block:
+The test should check to see if there is a SalesOrderDetail with a SalesOrderID that is equal to the OrderID 
+exists in the SalesLT.SalesOrderHeader table.Finish the statement to insert a record in the SalesOrderDetail 
+table when this is the case. Print out 'The order does not exist' when this is not the case.
+
+DECLARE @OrderDate datetime = GETDATE();
+DECLARE @DueDate datetime = DATEADD(dd, 7, GETDATE());
+DECLARE @CustomerID int = 1;
+INSERT INTO SalesLT.SalesOrderHeader (OrderDate, DueDate, CustomerID, ShipMethod)
+VALUES (@OrderDate, @DueDate, @CustomerID, 'CARGO TRANSPORT 5');
+DECLARE @OrderID int = SCOPE_IDENTITY();
+
+
+DECLARE @ProductID int = 760;
+DECLARE @Quantity int = 1;
+DECLARE @UnitPrice money = 782.99;
+
+IF EXISTS (SELECT * FROM SalesLT.SalesOrderHeader  WHERE SalesOrderID  = SalesOrderID)
+BEGIN
+	INSERT INTO SalesLT.SalesOrderDetail (SalesOrderID, OrderQty, ProductID, UnitPrice)
+	VALUES (@OrderID, @Quantity, @ProductID, @UnitPrice)
+END
+---------------------------------------------------------------------------------------------
+
+The loop should execute only if the average list price of a product in the 'Bikes' parent category is less than the market average.
+Update all products that are in the 'Bikes' parent category, increasing the list price by 10%.
+Determine the new average and maximum selling price for products that are in the 'Bikes' parent category.
+If the new maximum price is greater than or equal to the maximum acceptable price, exit the loop; otherwise continue.
+DECLARE @MarketAverage money = 2000;
+DECLARE @MarketMax money = 5000;
+DECLARE @AWMax money;
+DECLARE @AWAverage money;
+
+SELECT @AWAverage = AVG(ListPrice), @AWMax = MAX(ListPrice)
+FROM SalesLT.Product
+WHERE ProductCategoryID IN
+	(SELECT DISTINCT ProductCategoryID
+	 FROM SalesLT.vGetAllCategories
+	 WHERE ParentProductCategoryName = 'Bikes');
+
+WHILE @AWAverage < @MarketAverage
+BEGIN
+   UPDATE SalesLT.Product
+   SET ListPrice = ListPrice * 1.1
+   WHERE ProductCategoryID IN
+	(SELECT DISTINCT ProductCategoryID
+	 FROM SalesLT.vGetAllCategories
+	 WHERE ParentProductCategoryName = 'Bikes');
+
+	SELECT @AWAverage = AVG(ListPrice), @AWMax = MAX(ListPrice)
+	FROM SalesLT.Product
+	WHERE ProductCategoryID IN
+	(SELECT DISTINCT ProductCategoryID
+	 FROM SalesLT.vGetAllCategories
+	 WHERE ParentProductCategoryName = 'Bikes');
+
+   IF @AWMax >= @MarketMax
+      Break
+   ELSE
+      CONTINUE
+END
+
+PRINT 'New average bike price:' + CONVERT(VARCHAR, @AWAverage);
+PRINT 'New maximum bike price:' + CONVERT(VARCHAR, @AWMax);
+
+------------------------------------------------------------------------------------------------------
+
+Modify the code to check for the existence of the specified order ID before attempting to delete it. 
+If the order does not exist, your code should throw an error. Otherwise, it should go ahead and 
+delete the order data. If you coded the script correctly, your code should generate an error when you run it, 
+as the order with ID 0 does not exist.
+
+DECLARE @OrderID int = 0
+
+DECLARE @error VARCHAR(30) = 'Order #' + cast(@OrderID as VARCHAR) + ' does not exist';
+
+IF NOT EXISTS (SELECT * FROM SalesLT.SalesOrderHeader WHERE SalesOrderID = @OrderID)
+BEGIN
+  THROW 50001, @error, 0;
+END
+ELSE
+BEGIN
+  DELETE FROM SalesLT.SalesOrderDetail WHERE SalesOrderID = @OrderID;
+  DELETE FROM SalesLT.SalesOrderHeader WHERE SalesOrderID = @OrderID;
+END
+-----------------------------------------------------------------------------------------------------
+
+Add a TRY...CATCH to the code:
+
+Include the IF-ELSE block in the TRY part.
+In the CATCH part, print the error with ERROR_MESSAGE();
+
+
+DECLARE @OrderID int = 71774
+DECLARE @error VARCHAR(30) = 'Order #' + cast(@OrderID as VARCHAR) + ' does not exist';
+
+-- Wrap IF ELSE in a TRY block
+BEGIN TRY
+  IF NOT EXISTS (SELECT * FROM SalesLT.SalesOrderHeader WHERE SalesOrderID = @OrderID)
+  BEGIN
+    THROW 50001, @error, 0
+  END
+  ELSE
+  BEGIN
+    DELETE FROM SalesLT.SalesOrderDetail WHERE SalesOrderID = @OrderID;
+    DELETE FROM SalesLT.SalesOrderHeader WHERE SalesOrderID = @OrderID;
+  END
+END TRY
+-- Add a CATCH block to print out the error
+BEGIN CATCH
+  PRINT ERROR_MESSAGE();
+END CATCH
+
+------------------------------------------------------------------------------------------------------
+Add BEGIN TRANSACTION and COMMIT TRANSACTION to treat the two DELETE statements as a single transactional unit of work.
+In the error handler, modify the code so that if a transaction is in process, it is rolled back. If no transaction is 
+in process the error handler should continue to simply print the error message.
+
+DECLARE @OrderID int = 0
+DECLARE @error VARCHAR(30) = 'Order #' + cast(@OrderID as VARCHAR) + ' does not exist';
+
+BEGIN TRY
+  IF NOT EXISTS (SELECT * FROM SalesLT.SalesOrderHeader WHERE SalesOrderID = @OrderID)
+  BEGIN
+    THROW 50001, @error, 0
+  END
+  ELSE
+  BEGIN
+    BEGIN TRANSACTION
+    DELETE FROM SalesLT.SalesOrderDetail
+    WHERE SalesOrderID = @OrderID;
+    DELETE FROM SalesLT.SalesOrderHeader
+    WHERE SalesOrderID = @OrderID;
+    COMMIT TRANSACTION
+  END
+END TRY
+BEGIN CATCH
+  IF @@TRANCOUNT > 0
+  BEGIN
+     ROLLBACK TRANSACTION;
+  END
+  ELSE
+  BEGIN
+    PRINT ERROR_MESSAGE();
+  END
+END CATCH
+---------------------------------------------------------------------------------------------------
+Select the quantity per unit for all products in the Products table.
+
+
+SELECT PRODUCTNAME, QUANTITYPERUNIT FROM DBO.PRODUCTS
+
+--------------------------------------------------------------------------------------------------
+
+
+Select the unique category IDs from the Products table.
+
+SELECT DISTINCT CATEGORYID FROM DBO.PRODUCTS
+
+----------------------------------------------------------------------------------------------------
+
+Select the names of products from the Products table which have more than 20 units left in stock.
+
+SELECT PRODUCTNAME FROM DBO.PRODUCTS
+WHERE UNITSINSTOCK > 20
+----------------------------------------------------------------------------------------------------
+Select the product ID, product name, and unit price of the 10 most expensive products from the Products table.
+
+
+SELECT  TOP 10 PRODUCTID, PRODUCTNAME, UNITPRICE FROM DBO.PRODUCTS 
+ORDER BY UNITPRICE DESC
+---------------------------------------------------------------------------------------------------------
+
+Select the product ID, product name, and quantity per unit for all 
+products in the Products table. Sort your results alphabetically by product name (where A comes first).
+
+SELECT PRODUCTID, PRODUCTNAME,QUANTITYPERUNIT FROM DBO.PRODUCTS
+ORDER BY PRODUCTNAME ASC
+
+-----------------------------------------------------------------------------------------------------------
+Select the product ID, product name, and unit price of all products in the Products table. Sort your results by 
+number of units in stock, from greatest to least.
+Skip the first 10 results and get the next 5 after that.
+
+SELECT PRODUCTID, PRODUCTNAME, UNITPRICE FROM PRODUCTS
+ORDER BY UNITSINSTOCK DESC 
+OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY
+--------------------------------------------------------------------------------------------------------------
+Use STR, CONVERT, and NVARCHAR(30) where appropriate to display the first name, 
+employee ID and birthdate (as Unicode in ISO 8601 format) for each employee in the Employees table.
+Each result should be a single string in the following format, where each <<value>> is replaced by 
+the appropriately converted value:
+
+SELECT FirstName +' has an EmployeeID of ' +CAST(EmployeeID AS VarChar(5)) +' and was born '+CONVERT(NVARCHAR(30), BirthDate, 126) AS Employees FROM Employees
+-------------------------------------------------------------------------------------------------------------
+Select from the Orders table.
+
+The first column of your result should be a single string in exactly the following format:
+
+<<ShipName>> is from <<ShipCity or ShipRegion or ShipCountry>>
+If there is no ShipCity, then you should select ShipRegion, and if there is no ShipRegion you should select ShipCountry.
+
+SELECT 
+ShipName + ' is from ' + COALESCE(ShipCity,ShipRegion, ShipCountry) AS DESTIONATION 
+FROM DBO.ORDERS
+------------------------------------------------------------------------------------------------------------
+
+Select the ship name and ship postal code from the Orders table. If the postal code is missing, display 'unknown'.
+
+Select ShipName, isnull(ShipPostalCode, 'unknown')
+from dbo.Orders
+
+------------------------------------------------------------------------------------------------------------
+
+Using the Suppliers table, select the company name, and use a simple CASE expression to display 'outdated' if 
+the company has a fax number, or 'modern' if it doesn't. Do this by specifying IS NULL in your conditional statement.
+Alias the result of the CASE expression to Status.
+
+select 
+CompanyName,
+Case 
+when fax is null then 'modern' else 'outdated' end as Status
+from dbo.Suppliers
+--------------------------------------------------------------------------------------------------------
+
+Get the order ID and unit price for each order by joining the Orders table and the Order Details table.
+Note that you need to use [Order Details] since the table name contains whitespace.
+
+select a.orderId, b.UnitPrice
+from dbo.Orders a
+join dbo.[Order Details] b
+on a.OrderId = b.OrderId
+--------------------------------------------------------------------------------------------------------
+
+Get the order ID and first name of the associated employee by joining the Orders and Employees tables.
+
+select  b.OrderID, a.FirstName
+from dbo.Employees a
+join dbo.Orders b
+on a.EmployeeID = b.EmployeeID
+-----------------------------------------------------------------------------------------------------------
+
+Get the employee ID and related territory description for each territory an employee is in, by joining the 
+Employees, EmployeeTerritories and Territories tables.
+
+select a.EmployeeID, c.TerritoryDescription
+from dbo.Employees a
+join dbo.EmployeeTerritories b
+on a.EmployeeID = b.EmployeeID
+join dbo.Territories c
+on b.TerritoryID = c.TerritoryID
+-------------------------------------------------------------------------------------------------------
+
+Select all the different countries from the Customers table and the Suppliers table using UNION.
+
+select Country from dbo.Customers
+union 
+select Country from dbo.Suppliers
+
+--------------------------------------------------------------------------------------------------------
+
+Select all the countries, including duplicates, from the Customers table and the Suppliers table using UNION ALL.
+
+select Country from dbo.Suppliers
+union all 
+select Country from dbo.Customers
+---------------------------------------------------------------------------------------------------------
+Using the Products table, get the unit price of each product, rounded to the nearest dollar.
+
+Select 
+ProductName,
+UnitPrice,
+round(UnitPrice,0)
+From dbo.products 
+--------------------------------------------------------------------------------------------------------
+Using the Products table, get the total number of units in stock across all products.
+
+Select 
+sum(UnitsInStock)
+from dbo.Products 
+-------------------------------------------------------------------------------------------------------
+
+Using the Orders table, get the order ID and year of the order by using YEAR(). Alias the year as OrderYear.
+
+Select 
+OrderId,
+year(orderdate) as OrderYear
+from Orders
+------------------------------------------------------------------------------------------------------
+
+Using the Orders table, get the order ID and month of the order by using DATENAME(). Alias the month as OrderMonth.
+
+Select
+OrderId,
+datename(mm,Orderdate) as OrderMonth
+from Orders
+-------------------------------------------------------------------------------------------------------
+
+Use LEFT() to get the first two letters of each region description from the Region table.
+
+select 
+left(RegionDescription, 2)
+from Region
+---------------------------------------------------------------------------------------------------------
+Using the Suppliers table, select the city and postal code for each supplier, 
+using WHERE and ISNUMERIC() to select only those postal codes which have no letters in them.
+
+Select
+CompanyName,
+City,
+PostalCode
+from Suppliers
+where isnumeric(PostalCode) = 1
+-------------------------------------------------------------------------------------------------------
+Use LEFT() and UPPER() to get the first letter (capitalized) of each region description from the Region table.
+
+select
+upper(left(RegionDescription,1))
+from Region
+-------------------------------------------------------------------------------------------------------
+Use a subquery to get the product name and unit price of products from the Products table which have 
+a unit price greater than the average unit price from the Order Details table.
+
+Note that you need to use [Order Details] since the table name contains whitespace.
+
+select 
+ProductName,
+UnitPrice
+from Products
+where UnitPrice > (select avg(unitprice) from [order details] )
+-----------------------------------------------------------------------------------------------------
+Select from the Employees and Orders tables. Use a subquery to get the 
+first name and employee ID for employees who were associated with orders which shipped from the USA.
+
+
+select distinct sec.firstname, sec.employeeid 
+from (select firstname,a.employeeid from orders as a join employees as e on a.employeeid = e.employeeid where a.ShipCountry = 'USA'
+) sec
+----------------------------------------------------------------------------------------------------
+Use the # to create a new temporary table called ProductNames which has one field called ProductName (a VARCHAR of max length 40).
+Insert into this table the names of every product from the Products table. Note that there are two syntaxes for 
+the INSERT INTO statement. Use the syntax that does not specify the column names since the table only has one field.
+Select all columns from the ProductNames table you created. Note: you need to specify the Products table as Products, not dbo.Products.
+
+
+CREATE table #ProductNames(ProductName varchar(40));
+INSERT INTO #ProductNames select ProductName from Products;
+select * from #ProductNames;
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
